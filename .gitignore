@@ -1,0 +1,47 @@
+# Go build artifacts
+*.exe
+*.out
+*.test
+*.log
+
+# Compiled binaries
+/bin/
+/obj/
+
+# Vendor directory (if using `go mod vendor`)
+# /vendor/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+
+# Temporary files
+*.tmp
+*.temp
+
+# Logs
+/logs/
+*.log
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker-related files
+docker-compose.override.yml
+.dockerignore
+
+# Build artifacts
+/build/
+dist/
+node_modules/
+
+# Cache
+.cache/
