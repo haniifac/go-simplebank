@@ -29,7 +29,7 @@ func RandomOwner() string {
 }
 
 func RandomMoney() int64 {
-	return int64(RandomInt(100, 1000))
+	return int64(RandomInt(500, 1000))
 }
 
 func RandomCurrency() string {
