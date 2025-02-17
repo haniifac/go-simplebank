@@ -34,8 +34,31 @@ git clone https://github.com/your-username/simple-bank.git
 cd simple-bank
 ```
 
-### 2. Start PostgreSQL with Docker
+### 2. Get and verify the golang dependencies
+```bash
+go mod tidy
+go mod verify
+```
+
+Install makefile and go-migrate. This step is crucial to perform the `make` command
+
+### 3. Start PostgreSQL with Docker
 Run the following Makefile command to spin up a PostgreSQL container:
 ```bash
 make postgres
+```
+
+### 4. Create the database
+```bash
+make createdb
+```
+
+### 5. Apply the migration schema
+```bash
+make migrateup
+```
+
+### 6. Run the app
+```bash
+go run main.go
 ```
