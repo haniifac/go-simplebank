@@ -25,7 +25,7 @@
 *.log
 
 # Environment variables and secrets
-.app.env
+app.env
 .env
 .env.local
 .env.*.local
