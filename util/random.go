@@ -7,7 +7,7 @@ import (
 
 const alphabet = "abcdefghijklmnopqrstuvwxyz"
 
-var currencies = [4]string{"USD", "EUR", "GBP", "IDR"}
+var currencies = []string{"USD", "EUR", "CAD"}
 
 func RandomInt(min, max int) int {
 	return min + rand.Intn(max-min)
