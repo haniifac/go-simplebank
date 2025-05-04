@@ -10,4 +10,7 @@ CREATE TABLE users(
 ALTER TABLE accounts ADD CONSTRAINT "fk_account_owner" FOREIGN KEY (owner) REFERENCES users (username);
 ALTER TABLE accounts ADD CONSTRAINT "unique_owner_currency" UNIQUE (owner, currency);
 
+ALTER TABLE users ADD CONSTRAINT "unique_username" UNIQUE (username);
+ALTER TABLE users ADD CONSTRAINT "unique_email" UNIQUE (email);
+
 -- CREATE INDEX "users_username_idx" ON "users" ("username");
