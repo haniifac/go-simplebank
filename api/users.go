@@ -3,7 +3,6 @@ package api
 import (
 	"database/sql"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	db "github.com/haniifac/simplebank/db/sqlc"
@@ -16,14 +15,6 @@ type CreateUserRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 	Username string `json:"username" binding:"required,alphanum"`
 	Fullname string `json:"fullname" binding:"required"`
-}
-
-type CreateUserResponse struct {
-	Email             string    `json:"email"`
-	Username          string    `json:"username"`
-	Fullname          string    `json:"fullname"`
-	CreatedAt         time.Time `json:"created_at"`
-	PasswordUpdatedAt time.Time `json:"password_updated_at"`
 }
 
 type GetUserRequest struct {
@@ -39,13 +30,6 @@ func (server *Server) CreateUser(ctx *gin.Context) {
 
 	hashedPassword, err := util.HashPassword(req.Password)
 	if err != nil {
-		if errName, ok := err.(*pq.Error); ok {
-			switch errName.Code.Name() {
-			case "unique_violation", "foreign_key_violation":
-				ctx.JSON(http.StatusForbidden, errResponse(err))
-				return
-			}
-		}
 		ctx.JSON(http.StatusInternalServerError, errResponse(err))
 		return
 	}
@@ -59,19 +43,19 @@ func (server *Server) CreateUser(ctx *gin.Context) {
 
 	user, err := server.store.CreateUser(ctx, arg)
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Code.Name() {
+			case "unique_violation", "foreign_key_violation":
+				ctx.JSON(http.StatusForbidden, errResponse(err))
+				return
+			}
+		}
+
 		ctx.JSON(http.StatusInternalServerError, errResponse(err))
 		return
 	}
 
-	res := CreateUserResponse{
-		Email:             user.Email,
-		Username:          user.Username,
-		Fullname:          user.Fullname,
-		CreatedAt:         user.CreatedAt,
-		PasswordUpdatedAt: user.PasswordUpdatedAt,
-	}
-
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, user)
 }
 
 func (server *Server) GetUser(ctx *gin.Context) {
