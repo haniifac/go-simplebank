@@ -45,27 +45,10 @@ func NewPayload(username string, duration time.Duration) (*Payload, error) {
 	return payload, nil
 }
 
-// func (payload *Payload) GetExpirationTime() (*jwt.NumericDate, error) {
-// 	return jwt.NewNumericDate(payload.ExpiredAt), nil
-// }
-
-// func (payload *Payload) GetIssuedAt() (*jwt.NumericDate, error) {
-// 	return jwt.NewNumericDate(payload.IssuedAt), nil
-// }
-
-// func (payload *Payload) GetNotBefore() (*jwt.NumericDate, error) {
-// 	// Optional: Return nil if not applicable
-// 	return nil, nil
-// }
-
-// func (payload *Payload) GetIssuer() (string, error) {
-// 	return payload.Issuer, nil
-// }
-
-// func (payload *Payload) GetSubject() (string, error) {
-// 	return payload.Subject, nil
-// }
-
-// func (payload *Payload) GetAudience() (jwt.ClaimStrings, error) {
-// 	return payload.Audience, nil
-// }
+// Valid checks if the token payload is valid (e.g., not expired).
+func (payload *Payload) Valid() error {
+	if payload.ExpiresAt != nil && time.Now().After(payload.ExpiresAt.Time) {
+		return ErrExpiredToken
+	}
+	return nil
+}
