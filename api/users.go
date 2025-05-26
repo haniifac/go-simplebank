@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	db "github.com/haniifac/simplebank/db/sqlc"
@@ -17,8 +18,36 @@ type CreateUserRequest struct {
 	Fullname string `json:"fullname" binding:"required"`
 }
 
+type userResponse struct {
+	Username          string    `json:"username"`
+	Fullname          string    `json:"fullname"`
+	Email             string    `json:"email"`
+	CreatedAt         time.Time `json:"created_at"`
+	PasswordUpdatedAt time.Time `json:"password_updated_at"`
+}
+
+type loginUserRequest struct {
+	Username string `json:"username" binding:"required,alphanum"`
+	Password string `json:"password" binding:"required,min=6"`
+}
+
+type loginUserResponse struct {
+	AccessToken string       `json:"access_token"`
+	User        userResponse `json:"user"`
+}
+
 type GetUserRequest struct {
 	Username string `uri:"username" binding:"required"`
+}
+
+func castUserResponse(user db.User) userResponse {
+	return userResponse{
+		Username:          user.Username,
+		Fullname:          user.Fullname,
+		Email:             user.Email,
+		CreatedAt:         user.CreatedAt,
+		PasswordUpdatedAt: user.PasswordUpdatedAt,
+	}
 }
 
 func (server *Server) CreateUser(ctx *gin.Context) {
@@ -55,7 +84,7 @@ func (server *Server) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, user)
+	ctx.JSON(http.StatusOK, castUserResponse(user))
 }
 
 func (server *Server) GetUser(ctx *gin.Context) {
@@ -77,4 +106,45 @@ func (server *Server) GetUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, user)
+}
+
+func (server *Server) loginUser(ctx *gin.Context) {
+	var req loginUserRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errResponse(err))
+		return
+	}
+
+	user, err := server.store.GetUser(ctx, req.Username)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			ctx.JSON(http.StatusNotFound, errResponse(err))
+		default:
+			ctx.JSON(http.StatusInternalServerError, errResponse(err))
+		}
+		return
+	}
+
+	err = util.CheckPassword(req.Password, user.HashedPassword)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, errResponse(err))
+		return
+	}
+
+	accessToken, err := server.tokenMaker.CreateToken(
+		user.Username,
+		server.config.AccessTokenDuration,
+	)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errResponse(err))
+		return
+	}
+
+	res := loginUserResponse{
+		AccessToken: accessToken,
+		User:        castUserResponse(user),
+	}
+
+	ctx.JSON(http.StatusOK, res)
 }
