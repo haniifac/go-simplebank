@@ -84,7 +84,7 @@ func (server *Server) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, castUserResponse(user))
+	ctx.JSON(http.StatusOK, user)
 }
 
 func (server *Server) GetUser(ctx *gin.Context) {
