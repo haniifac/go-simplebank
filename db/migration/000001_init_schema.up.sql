@@ -39,3 +39,4 @@ COMMENT ON COLUMN "transfers"."amount" IS 'must be positive';
 ALTER TABLE "entries" ADD CONSTRAINT "entries_account_fk" FOREIGN KEY ("account_id") REFERENCES "accounts" ("id");
 ALTER TABLE "transfers" ADD CONSTRAINT "transfers_from_account_fk" FOREIGN KEY ("from_account_id") REFERENCES "accounts" ("id");
 ALTER TABLE "transfers" ADD CONSTRAINT "transfers_to_account_fk" FOREIGN KEY ("to_account_id") REFERENCES "accounts" ("id");
+ALTER TABLE "accounts" ADD CONSTRAINT "accounts_check_balance" CHECK ("balance" >= 0);
