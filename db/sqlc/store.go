@@ -64,6 +64,17 @@ func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (Tr
 	err := store.execTx(ctx, func(q *Queries) error {
 		var err error
 
+		// Check for overdraft balance
+		fromAccount, _, err := lockTwoAccounts(ctx, q, arg.FromAccountID, arg.ToAccountID)
+
+		// fromAccount, err := q.GetAccountForUpdate(ctx, arg.FromAccountID)
+		if err != nil {
+			return err
+		}
+		if fromAccount.Balance < arg.Amount {
+			return fmt.Errorf("insufficient funds")
+		}
+
 		// Step 1)
 		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
 			FromAccountID: arg.FromAccountID,
@@ -128,5 +139,29 @@ func addMoney(q *Queries, accountId1 int64, amount1 int64, accountId2 int64, amo
 		return Account{}, Account{}, err
 	}
 
+	return acc1, acc2, nil
+}
+
+func lockTwoAccounts(ctx context.Context, q *Queries, id1, id2 int64) (Account, Account, error) {
+	if id1 < id2 {
+		acc1, err := q.GetAccountForUpdate(ctx, id1)
+		if err != nil {
+			return Account{}, Account{}, err
+		}
+		acc2, err := q.GetAccountForUpdate(ctx, id2)
+		if err != nil {
+			return Account{}, Account{}, err
+		}
+		return acc1, acc2, nil
+	}
+
+	acc2, err := q.GetAccountForUpdate(ctx, id2)
+	if err != nil {
+		return Account{}, Account{}, err
+	}
+	acc1, err := q.GetAccountForUpdate(ctx, id1)
+	if err != nil {
+		return Account{}, Account{}, err
+	}
 	return acc1, acc2, nil
 }

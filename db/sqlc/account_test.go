@@ -52,21 +52,25 @@ func TestGetAccount(t *testing.T) {
 }
 
 func TestListAccount(t *testing.T) {
+	var lastAccount Account
 	for i := 0; i < 10; i++ {
-		createRandomAccount(t)
+		acc := createRandomAccount(t)
+		lastAccount = acc
 	}
 
 	args := ListAccountsParams{
+		Owner:  lastAccount.Owner,
 		Limit:  5,
-		Offset: 5,
+		Offset: 0,
 	}
 
 	accounts, err := testQueries.ListAccounts(context.Background(), args)
 	require.NoError(t, err)
-	require.Len(t, accounts, int(args.Limit))
+	require.NotEmpty(t, accounts)
 
 	for _, acount := range accounts {
 		require.NotEmpty(t, acount)
+		require.Equal(t, lastAccount.Owner, acount.Owner)
 	}
 }
 

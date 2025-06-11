@@ -2,11 +2,13 @@ package api
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	db "github.com/haniifac/simplebank/db/sqlc"
+	"github.com/haniifac/simplebank/token"
 	"github.com/haniifac/simplebank/util"
 	"github.com/lib/pq"
 )
@@ -91,6 +93,13 @@ func (server *Server) GetUser(ctx *gin.Context) {
 	var req GetUserRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errResponse(err))
+		return
+	}
+
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	if authPayload.Username != req.Username {
+		err := errors.New("user does not match authenticated user")
+		ctx.JSON(http.StatusForbidden, errResponse(err))
 		return
 	}
 

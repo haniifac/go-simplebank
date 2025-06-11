@@ -10,10 +10,12 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	mockdb "github.com/haniifac/simplebank/db/mock"
 	db "github.com/haniifac/simplebank/db/sqlc"
+	"github.com/haniifac/simplebank/token"
 	"github.com/haniifac/simplebank/util"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
@@ -56,6 +58,7 @@ func TestGetUser(t *testing.T) {
 		name          string
 		username      string
 		buildStubs    func(store *mockdb.MockStore)
+		setupAuth     func(t *testing.T, req *http.Request, tokenMaker token.Maker)
 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
@@ -67,8 +70,11 @@ func TestGetUser(t *testing.T) {
 					Times(1).
 					Return(user, nil)
 			},
+			setupAuth: func(t *testing.T, req *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, req, tokenMaker, user.Username, "bearer", time.Minute)
+			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				require.Equal(t, recorder.Code, http.StatusOK)
+				require.Equal(t, http.StatusOK, recorder.Code)
 				requireBodyMatcherUser(t, recorder, user)
 			},
 		},
@@ -80,6 +86,9 @@ func TestGetUser(t *testing.T) {
 					GetUser(gomock.Any(), user.Username).
 					Times(1).
 					Return(db.User{}, sql.ErrNoRows)
+			},
+			setupAuth: func(t *testing.T, req *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, req, tokenMaker, user.Username, "bearer", time.Minute)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusNotFound, recorder.Code)
@@ -101,6 +110,9 @@ func TestGetUser(t *testing.T) {
 
 			url := fmt.Sprintf("/users/%s", tc.username)
 			req := httptest.NewRequest(http.MethodGet, url, nil)
+
+			// setup auth
+			tc.setupAuth(t, req, server.tokenMaker)
 
 			// Send request
 			server.router.ServeHTTP(recorder, req)
