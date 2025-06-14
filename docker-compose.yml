@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 
 services:
   postgres:
@@ -11,8 +11,55 @@ services:
       POSTGRES_DB: simple_bank
     ports:
       - "5432:5432"
+    networks:
+      - bank-network
     volumes:
       - pg12-bankdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d simple_bank"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migration:
+    image: migrate/migrate
+    volumes:
+      - ./db/migration:/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: [
+      "-path", "/migrations",
+      "-database", "postgresql://root:secret@pg12-bank:5432/simple_bank?sslmode=disable",
+      "up"
+    ]
+    networks:
+      - bank-network
+  
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: simplebank-app
+    restart: always
+    env_file:
+      - app.env
+    environment:
+      DB_SOURCE: "postgresql://root:secret@pg12-bank:5432/simple_bank?sslmode=disable"
+      GIN_MODE: "release"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migration:
+        condition: service_completed_successfully
+    networks:
+      - bank-network
 
 volumes:
   pg12-bankdata:
+
+networks:
+  bank-network:
+    driver: bridge
