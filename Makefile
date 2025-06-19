@@ -7,6 +7,9 @@ createdb:
 dropdb:
 	docker exec -it pg12-bank dropdb simple_bank
 
+new_migrate:
+	migrate create -ext sql -dir db/migration -seq $(name)
+
 count ?=
 migrateup:
 	migrate -path db/migration/ -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose up $(count)
@@ -26,4 +29,4 @@ server:
 mock:
 	mockgen -package mockdb -destination ./db/mock/store.go  github.com/haniifac/simplebank/db/sqlc Store
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test server mock
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test server mock new_migrate

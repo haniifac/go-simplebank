@@ -21,7 +21,7 @@ This project uses the following technologies:
 2. [Gin](https://github.com/gin-gonic/gin) - A fast, easy-to-use HTTP framework.
 3. [PostgreSQL](https://www.postgresql.org/) - Our reliable relational database of choice.
 4. [SQLC](https://github.com/kyleconroy/sqlc) - Generates type-safe Go code from SQL queries.
-5. `Makefile` - Automates common tasks so you can focus on coding.
+5. [Makefile](https://www.gnu.org/software/make/manual/make.html) - Automates common tasks so you can focus on coding.
 
 ---
 
@@ -62,3 +62,20 @@ make migrateup
 ```bash
 go run main.go
 ```
+
+## Makefile usage examples
+
+| Command                                               | Description                                                       |
+| :---------------------------------------------------: | :---------------------------------------------------------------: |
+| `make postgres`                                       | Start PostgreSQL database using Docker                            |
+| `make createdb`                                       | Create a new database inside the running PostgreSQL container     |
+| `make dropdb`                                         | Drop (delete) the database                                        |
+| `make new_migrate name=![#c5f015]your_migration_name` | Create a new migration file                                       |
+| `make migrateup`                                      | Apply all new database migrations                                 |
+| `make migrateup count=![#c5f015]N`                    | Apply N migrations                                                |
+| `make migratedown`                                    | Rollback all migrations                                           |
+| `make migratedown count=![#c5f015]N`                  | Rollback N migrations                                             |
+| `make sqlc`                                           | Generate Go code from SQL queries using SQLC                      |
+| `make test`                                           | Run unit tests with coverage                                      |
+| `make server`                                         | Run the Go server (alternative to `go run main.go`)               |
+| `make mock`                                           | Generate mocks for unit tests using `mockgen`                     |
