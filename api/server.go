@@ -53,6 +53,7 @@ func (server *Server) setRouter() {
 
 	router.POST("/users", server.CreateUser)
 	router.POST("/users/login", server.loginUser)
+	router.POST("/tokens/refresh", server.renewAccessToken)
 
 	server.router = router
 }
