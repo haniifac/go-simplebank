@@ -31,13 +31,15 @@ func NewPasetoMaker(symmetricKey string) (Maker, error) {
 }
 
 // CreateToken implements Maker.
-func (p *PasetoMaker) CreateToken(username string, duration time.Duration) (string, error) {
+func (p *PasetoMaker) CreateToken(username string, duration time.Duration) (string, *Payload, error) {
 	payload, err := NewPayload(username, duration)
 	if err != nil {
-		return "", err
+		return "", &Payload{}, err
 	}
 
-	return p.paseto.Encrypt(p.symmetricKey, payload, nil)
+	pasetoToken, err := p.paseto.Encrypt(p.symmetricKey, payload, nil)
+
+	return pasetoToken, payload, err
 }
 
 // VerifyToken implements Maker.

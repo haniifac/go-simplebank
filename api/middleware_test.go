@@ -20,9 +20,10 @@ func addAuthorization(
 	tokenType string,
 	tokenDuration time.Duration,
 ) {
-	token, err := tokenMaker.CreateToken(username, tokenDuration)
+	token, payload, err := tokenMaker.CreateToken(username, tokenDuration)
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
+	require.NotEmpty(t, payload)
 
 	authHeader := tokenType + " " + token
 	req.Header.Set(authHeaderKey, authHeader)
@@ -87,9 +88,10 @@ func TestMiddlewareAuthentication(t *testing.T) {
 			name: "TamperedAuthorizationToken",
 			setupAuth: func(t *testing.T, req *http.Request, tokenMaker token.Maker) {
 				// Create a valid token and then tamper with it
-				token, err := tokenMaker.CreateToken("user", time.Minute)
+				token, tokenPayload, err := tokenMaker.CreateToken("user", time.Minute)
 				require.NoError(t, err)
 				require.NotEmpty(t, token)
+				require.NotEmpty(t, tokenPayload)
 
 				tamperedToken := token[:len(token)-1] + "x"
 				authHeader := "bearer " + tamperedToken

@@ -34,8 +34,9 @@ type loginUserRequest struct {
 }
 
 type loginUserResponse struct {
-	AccessToken string       `json:"access_token"`
-	User        userResponse `json:"user"`
+	AccessToken  string       `json:"access_token"`
+	RefreshToken string       `json:"refresh_token"`
+	User         userResponse `json:"user"`
 }
 
 type GetUserRequest struct {
@@ -141,7 +142,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, err := server.tokenMaker.CreateToken(
+	accessToken, _, err := server.tokenMaker.CreateToken(
 		user.Username,
 		server.config.AccessTokenDuration,
 	)
@@ -150,9 +151,37 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
+	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(
+		user.Username,
+		server.config.RefreshTokenDuration,
+	)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errResponse(err))
+		return
+	}
+
+	args := db.CreateSessionParams{
+		ID:           refreshPayload.ID,
+		Username:     user.Username,
+		RefreshToken: refreshToken,
+		UserAgent:    ctx.Request.UserAgent(),
+		IpAddress:    ctx.ClientIP(),
+		CreatedAt:    time.Now(),
+		ExpiresAt:    time.Now().Add(server.config.RefreshTokenDuration),
+		IsBlocked:    false,
+	}
+
+	_, err = server.store.CreateSession(ctx, args)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errResponse(err))
+		return
+	}
+
 	res := loginUserResponse{
-		AccessToken: accessToken,
-		User:        castUserResponse(user),
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		User:         castUserResponse(user),
 	}
 
 	ctx.JSON(http.StatusOK, res)
